@@ -191,3 +191,97 @@ The tutorial uses `var db = new DialogBox(...)`. `var` asks Java to infer the
 local variable's type from the right-hand side; `db` is still statically a
 `DialogBox`. It works only for local variables with an initializer, not for
 fields or method parameters.
+
+## Part 4: Using FXML
+
+### Separate the view from its controller
+
+FXML is XML that declares the scene graph. Java controller classes hold the
+behavior. This separation makes layout changes easier to find and keeps
+`Main` from becoming responsible for everything.
+
+```xml
+<TextField fx:id="userInput"
+           onAction="#handleUserInput" />
+```
+
+The same information previously written as Java setters can be expressed as
+attributes. `fx:id` links the node to a controller field, while `#` means
+"call this controller method".
+
+### `@FXML` preserves encapsulation
+
+FXMLLoader needs access to fields and methods named by the FXML document.
+Annotating them lets them remain private:
+
+```java
+@FXML
+private TextField userInput;
+
+@FXML
+private void handleUserInput() {
+    String input = userInput.getText();
+}
+```
+
+Without `@FXML`, those members would need wider visibility. The annotation
+therefore connects the files without exposing implementation details to the
+rest of the program.
+
+### The loading sequence
+
+`FXMLLoader` performs several jobs:
+
+1. Read the FXML resource.
+2. Construct the declared JavaFX nodes.
+3. Create the controller named by `fx:controller`.
+4. Inject matching `fx:id` nodes into `@FXML` fields.
+5. Call the controller's `initialize()` method.
+
+```java
+FXMLLoader loader = new FXMLLoader(
+        Main.class.getResource("/view/MainWindow.fxml"));
+AnchorPane root = loader.load();
+MainWindow controller = loader.getController();
+controller.setDuke(duke);
+```
+
+`setDuke` is dependency injection in a simple form: `Main` supplies the
+chatbot object that the newly created controller needs.
+
+### Two ways to connect FXML and controllers
+
+`MainWindow.fxml` names its controller using `fx:controller`. FXMLLoader
+constructs both the nodes and controller.
+
+`DialogBox.fxml` instead uses `fx:root`. The `DialogBox` constructor already
+has the Java root/controller instance, so it supplies both explicitly:
+
+```java
+fxmlLoader.setController(this);
+fxmlLoader.setRoot(this);
+fxmlLoader.load();
+```
+
+Use `fx:root` for a reusable custom component whose Java class extends its
+root node type.
+
+### Binding versus listening
+
+Part 3 listened for height changes and assigned a scroll value. Part 4 binds
+the values instead:
+
+```java
+scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
+```
+
+A binding keeps one property derived from another automatically. A listener
+runs arbitrary code when a value changes. Use binding for a continuing value
+relationship and listeners for side effects.
+
+### Scene Builder
+
+Scene Builder is a visual editor for FXML, not a different UI system. Inspect
+its generated FXML rather than treating it as magic. If it changes the
+`xmlns` JavaFX version, restore it to the runtime version used by this
+tutorial (`17`) to avoid version warnings.
