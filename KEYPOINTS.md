@@ -118,3 +118,76 @@ new Image(getClass().getResourceAsStream("/images/DaUser.png"));
 Preferred sizes guide JavaFX's layout calculation. Anchors position nodes
 relative to an `AnchorPane` edge. They are layout instructions, not fixed
 screen coordinates.
+
+## Part 3: Interacting with the User
+
+### JavaFX is event-driven
+
+The program does not repeatedly ask whether a button was clicked. Instead,
+you register a handler, and JavaFX calls it when the event happens:
+
+```java
+sendButton.setOnMouseClicked(event -> handleUserInput());
+userInput.setOnAction(event -> handleUserInput());
+```
+
+For a `TextField`, an action occurs when the user presses Enter. Both events
+call one method so the behavior stays consistent and is not duplicated.
+
+### Keep application logic separate from GUI logic
+
+`Main` collects input and displays output. `Duke` decides what response to
+return:
+
+```java
+String userText = userInput.getText();
+String dukeText = duke.getResponse(userText);
+```
+
+This boundary matters in the iP: your GUI should call the existing chatbot
+logic instead of copying command parsing or task operations into UI classes.
+
+### Properties can be observed
+
+Many JavaFX values are observable properties. A listener runs whenever the
+observed value changes:
+
+```java
+dialogContainer.heightProperty().addListener(
+        observable -> scrollPane.setVvalue(1.0));
+```
+
+Adding a message changes the `VBox` height, so the listener scrolls to the
+bottom. This is reactive behavior: describe what should happen *when a value
+changes* instead of manually checking it continuously.
+
+### Lambdas are short handler implementations
+
+In `event -> handleUserInput()`, the value before `->` is the event supplied
+by JavaFX, and the expression after it is the code to execute. Use a block
+when more than one statement is needed:
+
+```java
+event -> {
+    handleUserInput();
+    userInput.requestFocus();
+}
+```
+
+### Factory methods express intent
+
+These calls are clearer than creating a generic dialog box and remembering
+whether to flip it:
+
+```java
+DialogBox.getUserDialog(userText, userImage);
+DialogBox.getDukeDialog(dukeText, dukeImage);
+```
+
+The public factory methods choose the correct arrangement. The private
+`flip()` method hides the implementation detail.
+
+The tutorial uses `var db = new DialogBox(...)`. `var` asks Java to infer the
+local variable's type from the right-hand side; `db` is still statically a
+`DialogBox`. It works only for local variables with an initializer, not for
+fields or method parameters.
