@@ -285,3 +285,136 @@ Scene Builder is a visual editor for FXML, not a different UI system. Inspect
 its generated FXML rather than treating it as magic. If it changes the
 `xmlns` JavaFX version, restore it to the runtime version used by this
 tutorial (`17`) to avoid version warnings.
+
+## Part 5: Tweaking the GUI
+
+### Make layouts responsive with constraints
+
+Preferred sizes alone describe an initial or desired size. Anchor constraints
+describe how a child should respond when its parent changes size:
+
+```xml
+<TextField AnchorPane.leftAnchor="0.0"
+           AnchorPane.rightAnchor="76.0"
+           AnchorPane.bottomAnchor="1.0" />
+```
+
+Anchoring both horizontal edges lets the text field grow horizontally while
+leaving 76 pixels for the button. The scroll pane is anchored on all four
+edges, so it grows in both directions. `fitToWidth="true"` also resizes its
+content to the viewport width.
+
+Minimum stage dimensions prevent resizing the interface until controls become
+unusable:
+
+```java
+stage.setMinHeight(220);
+stage.setMinWidth(417);
+```
+
+### Keep appearance in CSS
+
+FXML defines structure, controller classes define behavior, and CSS defines
+appearance. Link a stylesheet from FXML using a resource-relative URL:
+
+```xml
+<AnchorPane stylesheets="@../css/main.css">
+```
+
+JavaFX CSS resembles browser CSS but its properties usually begin with
+`-fx-`. The most useful selectors are:
+
+```css
+.button { }                 /* Every node with class "button". */
+#displayPicture { }         /* The node with this ID. */
+.button:hover { }           /* A class in a temporary state. */
+.scroll-pane .viewport { }  /* A descendant inside another node. */
+```
+
+Built-in controls already have style classes such as `.button`, `.label`, and
+`.text-field`. `fx:id="displayPicture"` also provides the `#displayPicture`
+CSS ID used in this tutorial.
+
+### Reuse colours and represent interaction states
+
+A looked-up colour is a named CSS value inherited through the scene graph:
+
+```css
+.root {
+    main-color: rgb(237, 255, 242);
+    -fx-background-color: main-color;
+}
+```
+
+Pseudo-classes style temporary states without Java event handlers:
+
+```css
+.button:hover {
+    -fx-background-color: cyan;
+}
+
+.button:pressed {
+    -fx-background-color: orange;
+}
+```
+
+Use CSS for visual feedback and Java handlers for actual behavior.
+
+### Understand spacing and borders
+
+- Padding is space between content and its border.
+- Margin is space outside the border.
+- JavaFX CSS has no direct margin property. Matching background and border
+  insets can simulate that outside spacing.
+
+```css
+.label {
+    -fx-padding: 6px;
+    -fx-border-insets: 0 7px 0 7px;
+    -fx-background-insets: 0 7px 0 7px;
+}
+```
+
+Four values are read clockwise as top, right, bottom, left. Radius values use
+the same order for the four corners. Giving Duke's label a separate
+`.reply-label` class lets its bubble point in the opposite direction.
+
+### Add and remove style classes dynamically
+
+Controllers can choose a visual state at runtime:
+
+```java
+if (isError) {
+    dialog.getStyleClass().add("error-label");
+}
+```
+
+That is the reusable idea behind Part 5's command-specific colours. The
+tutorial starter only echoes text and has no command classes, so command-type
+styling was intentionally not copied here. In the iP, the parser or command
+result should provide the semantic state; the GUI should only select the
+matching class.
+
+### Background images are ordinary CSS resources
+
+A background image can be resolved relative to the CSS file:
+
+```css
+.root {
+    -fx-background-image: url("../images/background.jpg");
+    -fx-background-size: cover;
+}
+```
+
+`cover` preserves the aspect ratio while covering the region; `stretch`
+distorts the image to fit. Repetition can be controlled per axis. No
+background image was added because Part 5 does not supply one and the choice
+is purely cosmetic.
+
+### Implemented scope
+
+This project implements every generally applicable Part 5 tweak: responsive
+anchoring, minimum window dimensions, linked stylesheets, colours, borders,
+padding/insets, directional bubbles, hover/pressed states, and image shadows.
+Only command-specific styling and a user-chosen background image were omitted
+because the tutorial starter has neither commands nor a supplied background.
